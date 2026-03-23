@@ -37,10 +37,10 @@ The document upload uses a 3-step process:
 2. `PUT` file to signed URL
 3. `POST /v1/documents/confirm-upload` - Finalize upload
 
-### Architecture (SOLID Principles)
+### Architecture
 
 ```
-ingestion/
+doc-ingest/
 ├── main.py         # Orchestration (depends on abstraction)
 ├── config.py       # Settings (reads from .env)
 ├── models.py       # Data classes: Client, Invoice, UploadResult
@@ -54,13 +54,6 @@ ingestion/
 ├── .gitignore      # Excludes .env
 └── requirements.txt
 ```
-
-| Principle | Implementation |
-|-----------|----------------|
-| **S** - Single Responsibility | Each module has one job (extract, serve, model, utils) |
-| **I** - Interface Segregation | `MatterService` Protocol defines only needed methods |
-| **D** - Dependency Inversion | `main.py` depends on `MatterService` Protocol, not concrete class |
-| **O** - Open/Closed | Upload logic via service methods, allowing different implementations |
 
 ### Code Patterns
 
