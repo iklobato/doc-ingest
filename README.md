@@ -61,6 +61,14 @@ doc-ingest/
 - **Early returns** - Functions use guard clauses and early returns for cleaner flow
 - **Type hints** - Not added per user request
 
+## Example Output
+
+```
+INFO: Found 8 invoice file(s)
+INFO: Found 7 unique client(s)
+INFO: Processed: 8, Skipped: 8, Failed: 0
+```
+
 ## Setup
 
 ### Prerequisites
