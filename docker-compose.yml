@@ -1,0 +1,10 @@
+services:
+  ingestion:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    volumes:
+      - ./files:/app/files
+    working_dir: /app
