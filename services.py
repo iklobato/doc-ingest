@@ -1,7 +1,8 @@
-import re
 import requests
 from pathlib import Path
 from typing import Protocol
+import logging
+from typing import Optional
 
 from models import Client, UploadResult
 from config import BASE_URL, API_KEY, USER_EMAIL
@@ -35,7 +36,26 @@ class EveMatterService:
             "closed": False,
             "visibility": "ORG",
         }
-        self._request("PUT", f"/v1/matters/{external_id}", json=payload)
+        response = self._request("PUT", f"/v1/matters/{external_id}", json=payload)
+        response.raise_for_status()
+        matter_external_id = response.json().get("matter").get("id")
+        note_payload = {
+            "externalMatterId": matter_external_id,
+            # "externalLeadId": "string",
+            "syncNotes": [
+                {
+                    "externalId": "string",
+                    "body": "string",
+                    "createdAt": "string",
+                    "updatedAt": "string",
+                    "title": "string",
+                    "authorEmail": "string",
+                    "authorName": "string",
+                }
+            ],
+        }
+        # response = self._request("POST", "/v1/notes/batch-sync", json=note_payload)
+        # logging.info(f"Note sync response: {response.status_code} - {response.text}")
         return external_id
 
     def upload_invoice(self, matter_id: str, file_path: Path) -> UploadResult:
@@ -80,3 +100,76 @@ class EveMatterService:
         )
 
         return UploadResult(status="uploaded", document=doc_result["document"])
+
+    def list_matters(self) -> list[dict]:
+        """Fetch all matters with pagination."""
+        all_matters = []
+        cursor = None
+
+        while True:
+            params = {"limit": 100}
+            if cursor:
+                params["cursor"] = cursor
+
+            response = self._request("GET", "/v1/matters", params=params)
+            data = response.json()
+
+            all_matters.extend(data.get("items", []))
+
+            if not data.get("hasNext"):
+                break
+            cursor = data.get("nextCursor")
+
+        return all_matters
+
+    def get_matter_notes(self, matter_external_id: str) -> list[dict]:
+        """Fetch all notes for a matter."""
+        all_notes = []
+        cursor = None
+
+        while True:
+            params = {"limit": 100, "externalMatterId": matter_external_id}
+            if cursor:
+                params["cursor"] = cursor
+
+            try:
+                response = self._request("GET", "/v1/notes", params=params)
+                data = response.json()
+
+                all_notes.extend(data.get("items", []))
+
+                if not data.get("hasNext"):
+                    break
+                cursor = data.get("nextCursor")
+            except requests.HTTPError as e:
+                if e.response.status_code == 404:
+                    break
+                raise
+
+        return all_notes
+
+    def get_matter_documents(self, matter_external_id: str) -> list[dict]:
+        """Fetch all documents for a matter."""
+        all_docs = []
+        cursor = None
+
+        while True:
+            params = {"limit": 100, "externalMatterId": matter_external_id}
+            if cursor:
+                params["cursor"] = cursor
+
+            try:
+                response = self._request("GET", "/v1/documents", params=params)
+                data = response.json()
+
+                all_docs.extend(data.get("items", []))
+
+                if not data.get("hasNext"):
+                    break
+                cursor = data.get("nextCursor")
+            except requests.HTTPError as e:
+                if e.response.status_code == 404:
+                    break
+                raise
+
+        return all_docs

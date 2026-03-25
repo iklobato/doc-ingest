@@ -44,3 +44,14 @@ def extract_client_name(pdf_path: Path) -> Optional[str]:
 
 def get_invoice_files(files_dir: Path, pattern: str) -> list[Path]:
     return sorted(files_dir.glob(pattern))
+
+
+
+def extract_notes(pdf_path: Path) -> Optional[str]:
+    with pdfplumber.open(pdf_path) as pdf:
+        text = ""
+        for page in pdf.pages:
+            page_text = page.extract_text()
+            if page_text:
+                text += page_text + "\n"
+

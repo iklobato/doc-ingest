@@ -85,6 +85,53 @@ def main():
         f"Processed: {total_uploaded + total_skipped}, Skipped: {total_skipped}, Failed: {total_failed}"
     )
 
+    print("\n" + "=" * 70)
+    print("MATTERS SUMMARY")
+    print("=" * 70)
+
+    all_matters = service.list_matters()
+
+    for matter in all_matters:
+        matter_id = matter.get("externalId")
+        if not matter_id:
+            continue
+
+        status = "CLOSED" if matter.get("closed") else "OPEN"
+        print(f"\n[{status}] {matter.get('name')}")
+        print(f"  External ID: {matter_id}")
+        print(f"  Visibility: {matter.get('visibility')}")
+        print(f"  Created: {matter.get('createdAt')}")
+        print(f"  Updated: {matter.get('updatedAt')}")
+
+        users = matter.get("associatedUsers", [])
+        if users:
+            print(f"  Users: {', '.join(u.get('email', 'N/A') for u in users)}")
+
+        notes = service.get_matter_notes(matter_id)
+        if notes:
+            print(f"  Notes ({len(notes)}):")
+            for note in notes:
+                title = note.get("title") or "Untitled"
+                author = note.get("authorEmail") or "Unknown"
+                body_preview = note.get("body", "")[:100]
+                if len(note.get("body", "")) > 100:
+                    body_preview += "..."
+                print(f"    - [{title}] by {author}")
+                print(f"      {body_preview}")
+        else:
+            print(f"  Notes: None")
+
+        docs = service.get_matter_documents(matter_id)
+        if docs:
+            print(f"  Documents ({len(docs)}):")
+            for doc in docs:
+                print(f"    - {doc.get('fileName')} ({doc.get('status')})")
+        else:
+            print(f"  Documents: None")
+
+    print("\n" + "=" * 70)
+    print(f"Total: {len(all_matters)} matters")
+
 
 if __name__ == "__main__":
     main()
