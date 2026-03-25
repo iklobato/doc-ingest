@@ -15,45 +15,23 @@ Usage:
 import argparse
 import json
 import logging
-import re
 import requests
 from datetime import datetime, timezone
 from pathlib import Path
 
-import pdfplumber
-
 from config import FILES_DIR, INVOICE_PATTERN, BASE_URL, API_KEY, USER_EMAIL
 from utils import slugify
-from extractors import extract_client_name
+from extractors import extract_client_name, extract_notes
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
-
-
-def extract_notes_from_pdf(pdf_path: Path) -> str | None:
-    """Extract notes text from invoice PDF."""
-    with pdfplumber.open(pdf_path) as pdf:
-        text = "\n".join(page.extract_text() or "" for page in pdf.pages)
-
-    if not text.strip():
-        return None
-
-    match = re.search(
-        r"(?:^|\n)\s*notes?\s*:\s*\n?(.*?)(?=\n\s*(?:terms|order\s*id|#)|$)",
-        text,
-        re.IGNORECASE | re.DOTALL,
-    )
-    if match:
-        return match.group(1).strip()
-
-    return None
 
 
 def get_pdfs_with_notes(files_dir: Path, pattern: str) -> list[tuple[Path, str]]:
     """Scan PDFs and extract notes. Returns list of (pdf_path, notes_text)."""
     results = []
     for pdf_path in sorted(files_dir.glob(pattern)):
-        notes = extract_notes_from_pdf(pdf_path)
+        notes = extract_notes(pdf_path)
         if notes:
             results.append((pdf_path, notes))
             logger.info(f"Found notes in: {pdf_path.name}")
